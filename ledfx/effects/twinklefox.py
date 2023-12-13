@@ -27,6 +27,11 @@ class Twinklefox(AudioReactiveEffect, HSVEffect):
                 description="Twinkle density",
                 default=0.625,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
+            vol.Optional(
+                "reactivity",
+                description="Audio Reactive modifier",
+                default=0.2,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
         }
     )
 
@@ -73,7 +78,8 @@ class Twinklefox(AudioReactiveEffect, HSVEffect):
 
     def render_hsv(self):
         now_ns = time.time_ns()
-        self.clk += self.speed_modifier*(now_ns - self.last_time)/1.0e6 #Original twinklefox ticks in milliseconds
+        dt = (now_ns - self.last_time)/1.0e6 #Original twinklefox ticks in milliseconds
+        self.clk += (self.speed_modifier+self._config["reactivity"]*self._lows_power*250)*dt
         #Wrap our clock every 2 days just in case
         self.clk = np.where(self.clk > self.clkwrap, self.clk - self.clkwrap, self.clk)
         self.last_time = now_ns
